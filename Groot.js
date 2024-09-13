@@ -32,7 +32,7 @@ class Groot {
     const fileToBeAddedPath = path.join(this.objectPath, hash);
     await fs.writeFile(fileToBeAddedPath, data);
     // add to staging area
-    this.updateStagingArea(fileToBeAdded, hash);
+    await this.updateStagingArea(fileToBeAdded, hash);
     console.log(`Added ${fileToBeAdded}`);
   }
 
@@ -45,7 +45,39 @@ class Groot {
 
     await fs.writeFile(this.indexPath, JSON.stringify(index));
   }
+
+  async commit(message) {
+    const index = JSON.parse(await fs.readFile(this.indexPath, {encoding: 'utf-8'}));
+    const parentCommit = await this.getCurrentHead();
+
+    console.log(index);
+
+    const commitData = {
+      date: new Date().toISOString(),
+      parent: parentCommit,
+      message,
+      files: index,
+    };
+
+    const commitDataHash = this.hashObject(JSON.stringify(commitData));
+    const commitDataPath = path.join(this.objectPath, commitDataHash);
+    await fs.writeFile(commitDataPath, JSON.stringify(commitData));
+    await fs.writeFile(this.headPath, commitDataHash);
+    await fs.writeFile(this.indexPath, JSON.stringify([]));
+    console.log("Commit successfullly created : " + commitDataHash);
+  }
+
+  async getCurrentHead() {
+    try {
+      return await fs.readFile(this.headPath, { encoding: "utf-8" });
+    } catch (error) {
+      return null;
+    }
+  }
 }
 
-const groot = new Groot();
-groot.add("sample.txt");
+(async () => {
+  const groot = new Groot();
+  await groot.add("sample.txt");
+  await groot.commit("initial commit");
+})();
