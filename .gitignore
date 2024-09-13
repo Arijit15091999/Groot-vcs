@@ -1,0 +1,4 @@
+/node_modules/
+/.groot/
+/.groot/objects/
+HEAD.txt
